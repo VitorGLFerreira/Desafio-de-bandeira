@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafio das Bandeiras</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Fonte Google Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Estilos Modo Escuro */
+        html.dark body {
+            background-color: #0b0f19;
+            color: #f3f4f6;
+        }
+        html.dark .glass-card {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+        }
+        html.dark .theme-inner-box {
+            background-color: rgba(15, 23, 42, 0.8);
+            border-color: rgba(51, 65, 85, 0.6);
+            color: #f1f5f9;
+        }
+        html.dark .theme-text-main { color: #f8fafc; }
+        html.dark .theme-text-sub { color: #94a3b8; }
+
+        /* Estilos Modo Claro */
+        html:not(.dark) body {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+        html:not(.dark) .glass-card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(203, 213, 225, 0.8);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+        }
+        html:not(.dark) .theme-inner-box {
+            background-color: rgba(241, 245, 249, 0.9);
+            border-color: rgba(203, 213, 225, 0.9);
+            color: #0f172a;
+        }
+        html:not(.dark) .theme-text-main { color: #0f172a; }
+        html:not(.dark) .theme-text-sub { color: #475569; }
+
+        @keyframes pulseFast {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.75; transform: scale(0.98); }
+        }
+        .animate-pulse-fast {
+            animation: pulseFast 0.5s infinite;
+        }
+
+        /* Efeito de Animação Fluida para os Botoes */
+        .card-interactive {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.1);
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.8);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center p-4 relative overflow-x-hidden selection:bg-indigo-500 selection:text-white">
+
+    <!-- Canvas de Confete -->
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+    <div class="w-full max-w-md mx-auto my-auto flex flex-col items-center">
+        
+        <!-- Header / Navegação Superior -->
+        <header class="w-full flex items-center justify-between mb-4 px-2">
+            <div class="flex items-center space-x-2 cursor-pointer group" onclick="showScreen('main-menu')">
+                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fa-solid fa-flag text-white text-lg group-hover:rotate-12 transition-transform duration-300"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-base leading-none bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">Bandeiras Express</h1>
+                    <span class="text-[10px] theme-text-sub font-semibold tracking-wider uppercase">Quiz Geográfico</span>
+                </div>
+            </div>
+
+            <!-- Botões de Controle Superior (Som, Tema, Ranking) -->
+            <div class="flex items-center space-x-2">
+                <button id="theme-btn" onclick="toggleTheme()" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center text-amber-400 hover:scale-110 transition active:scale-95 shadow-sm hover:shadow-indigo-500/20" title="Alternar Tema">
+                    <i id="theme-icon" class="fa-solid fa-sun text-sm"></i>
+                </button>
+                <button id="audio-btn" onclick="toggleAudio()" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center theme-text-sub hover:text-indigo-500 transition hover:scale-110 active:scale-95 shadow-sm hover:shadow-indigo-500/20" title="Alternar Som">
+                    <i class="fa-solid fa-volume-high text-sm"></i>
+                </button>
+                <button onclick="openLeaderboardModal()" class="w-9 h-9 rounded-xl glass-card flex items-center justify-center text-amber-500 hover:text-amber-400 transition hover:scale-110 active:scale-95 shadow-sm hover:shadow-amber-500/20" title="Ver Ranking">
+                    <i class="fa-solid fa-trophy text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- MENU INICIAL (SELEÇÃO DE MODO) -->
+        <main id="main-menu" class="w-full glass-card rounded-3xl p-6 shadow-2xl space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-indigo-600 to-purple-500 p-0.5 shadow-xl shadow-indigo-500/20 hover:scale-105 transition-transform duration-300">
+                    <div class="w-full h-full theme-inner-box rounded-[22px] flex items-center justify-center">
+                        <i class="fa-solid fa-earth-americas text-4xl text-indigo-500"></i>
+                    </div>
+                </div>
+                <h2 class="text-2xl font-black theme-text-main">Escolha o Modo de Jogo</h2>
+                <p class="text-xs theme-text-sub max-w-xs mx-auto">Teste seus conhecimentos em geografia selecionando o estilo de desafio preferido.</p>
+            </div>
+
+            <div class="space-y-3.5 pt-1">
+                <!-- Modo 1: Contra o Tempo -->
+                <button onclick="selectGameMode('express')" class="card-interactive w-full p-4 rounded-2xl glass-card border border-indigo-500/30 hover:border-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 flex items-center justify-between group transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/20 active:scale-[0.98] text-left">
+                    <div class="flex items-center space-x-3.5">
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-500 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
+                            <i class="fa-solid fa-hourglass-half text-xl"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h3 class="font-black text-sm text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-500 transition-colors">Contra o Tempo</h3>
+                                <span class="px-2 py-0.5 rounded text-[9px] font-extrabold bg-indigo-500/20 text-indigo-500 border border-indigo-500/30 uppercase group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300">Express</span>
+                            </div>
+                            <p class="text-[11px] theme-text-sub mt-0.5">Responda o máximo de bandeiras que conseguir antes do tempo esgotar.</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-400 group-hover:text-indigo-500 group-hover:translate-x-1.5 transition-all duration-300 ml-2 shrink-0"></i>
+                </button>
+
+                <!-- Modo 2: Sprint 10 Bandeiras -->
+                <button onclick="selectGameMode('stopwatch')" class="card-interactive w-full p-4 rounded-2xl glass-card border border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20 flex items-center justify-between group transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/20 active:scale-[0.98] text-left">
+                    <div class="flex items-center space-x-3.5">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
+                            <i class="fa-solid fa-stopwatch text-xl"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h3 class="font-black text-sm text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-500 transition-colors">Desafio do Cronômetro</h3>
+                                <span class="px-2 py-0.5 rounded text-[9px] font-extrabold bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 uppercase group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">Sprint 10</span>
+                            </div>
+                            <p class="text-[11px] theme-text-sub mt-0.5">Acerte 10 bandeiras no menor tempo total possível.</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-400 group-hover:text-emerald-500 group-hover:translate-x-1.5 transition-all duration-300 ml-2 shrink-0"></i>
+                </button>
+            </div>
+        </main>
+
+        <!-- SELEÇÃO DE DIFICULDADE: EXPRESS (CONTRA O TEMPO) -->
+        <main id="express-difficulty-screen" class="w-full glass-card rounded-3xl p-6 shadow-2xl space-y-5 hidden">
+            <div class="flex items-center justify-between border-b border-slate-500/20 pb-3">
+                <button onclick="showScreen('main-menu')" class="text-xs font-bold theme-text-sub hover:text-indigo-500 flex items-center gap-1 transition-all duration-200 hover:-translate-x-1">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar
+                </button>
+                <span class="text-xs font-extrabold uppercase text-indigo-500 tracking-wider">Modo Express</span>
+            </div>
+
+            <div class="text-center space-y-1">
+                <h2 class="text-xl font-black theme-text-main">Escolha a Dificuldade</h2>
+                <p class="text-xs theme-text-sub">Defina o tempo limite para a rodada.</p>
+            </div>
+
+            <div class="space-y-3 pt-1">
+                <button onclick="startGame('express', 'easy')" class="card-interactive w-full p-4 rounded-2xl glass-card border border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20 flex items-center justify-between group transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/20 active:scale-[0.98]">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
+                            <i class="fa-solid fa-bolt text-lg"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="font-bold text-sm text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-500 transition-colors">Modo Fácil</h3>
+                            <p class="text-[11px] theme-text-sub">60 segundos de tempo limite</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-400 group-hover:text-emerald-500 group-hover:translate-x-1.5 transition-all duration-300"></i>
+                </button>
+
+                <button onclick="startGame('express', 'medium')" class="card-interactive w-full p-4 rounded-2xl glass-card border border-amber-500/30 hover:border-amber-500 bg-amber-500/10 hover:bg-amber-500/20 flex items-center justify-between group transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/20 active:scale-[0.98]">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
+                            <i class="fa-solid fa-stopwatch text-lg"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="font-bold text-sm text-amber-600 dark:text-amber-400 group-hover:text-amber-500 transition-colors">Modo Médio</h3>
+                            <p class="text-[11px] theme-text-sub">40 segundos de tempo limite</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-400 group-hover:text-amber-500 group-hover:translate-x-1.5 transition-all duration-300"></i>
+                </button>
+
+                <button onclick="startGame('express', 'hard')" class="card-interactive w-full p-4 rounded-2xl glass-card border border-rose-500/30 hover:border-rose-500 bg-rose-500/10 hover:bg-rose-500/20 flex items-center justify-between group transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-rose-500/20 active:scale-[0.98]">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-500 flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
+                            <i class="fa-solid fa-fire text-lg"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="font-bold text-sm text-rose-600 dark:text-rose-400 group-hover:text-rose-500 transition-colors">Modo Difícil</h3>
+                            <p class="text-[11px] theme-text-sub">20 segundos de tempo limite</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-400 group-hover:text-rose-500 group-hover:translate-x-1.5 transition-all duration-300"></i>
+                </button>
+            </div>
+        </main>
+
+        <!-- SELEÇÃO DE DIFICULDADE: SPRINT (10 BANDEIRAS) -->
+        <main id="stopwatch-difficulty-screen" class="w-full glass-card rounded-3xl p-6 shadow-2xl space-y-5 hidden">
+            <div class="flex items-center justify-between border-b border-slate-500/20 pb-3">
+                <button onclick="showScreen('main-menu')" class="text-xs font-bold theme-text-sub hover:text-emerald-500 flex items-center gap-1 transition-all duration-200 hover:-translate-x-1">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar
+                </button>
+                <span class="text-xs font-extrabold uppercase text-emerald-500 tracking-wider">Sprint 10 Bandeiras</span>
+            </div>
+
+            <div class="text-center space-y-1">
+                <h2 class="text-xl font-black theme-text-main">Escolha a Dificuldade</h2>
+                <p class="text-xs theme-text-sub">Defina o nível de raridade das bandeiras.</p>
+            </div>
+
+            <div class="space-y-3 pt-1">
+                <button onclick="startGame('stopwatch', 'easy')" class="card-interactive w-full p-4 rounded-2xl glass-card border border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20 flex items-center justify-between group transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/20 active:scale-[0.98]">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
+                            <i class="fa-solid fa-smile text-lg"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="font-bold text-sm text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-500 transition-colors">Modo Fácil</h3>
+                            <p class="text-[11px] theme-text-sub">Bandeiras conhecidas e populares</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-400 group-hover:text-emerald-500 group-hover:translate-x-1.5 transition-all duration-300"></i>
+                </button>
+
+                <button onclick="startGame('stopwatch', 'medium')" class="card-interactive w-full p-4 rounded-2xl glass-card border border-amber-500/30 hover:border-amber-500 bg-amber-500/10 hover:bg-amber-500/20 flex items-center justify-between group transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-amber-500/20 active:scale-[0.98]">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
+                            <i class="fa-solid fa-brain text-lg"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="font-bold text-sm text-amber-600 dark:text-amber-400 group-hover:text-amber-500 transition-colors">Modo Médio</h3>
+                            <p class="text-[11px] theme-text-sub">Bandeiras pouco conhecidas</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-400 group-hover:text-amber-500 group-hover:translate-x-1.5 transition-all duration-300"></i>
+                </button>
+
+                <button onclick="startGame('stopwatch', 'hard')" class="card-interactive w-full p-4 rounded-2xl glass-card border border-rose-500/30 hover:border-rose-500 bg-rose-500/10 hover:bg-rose-500/20 flex items-center justify-between group transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl hover:shadow-rose-500/20 active:scale-[0.98]">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-500 flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
+                            <i class="fa-solid fa-skull text-lg"></i>
+                        </div>
+                        <div class="text-left">
+                            <h3 class="font-bold text-sm text-rose-600 dark:text-rose-400 group-hover:text-rose-500 transition-colors">Modo Difícil</h3>
+                            <p class="text-[11px] theme-text-sub">Bandeiras extremamente obscuras</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-400 group-hover:text-rose-500 group-hover:translate-x-1.5 transition-all duration-300"></i>
+                </button>
+            </div>
+        </main>
+
+        <!-- TELA DE JOGO DINÂMICA -->
+        <main id="game-screen" class="w-full glass-card rounded-3xl p-5 shadow-2xl space-y-4 hidden">
+            <!-- Game Top Status -->
+            <div class="flex items-center justify-between gap-2">
+                <span id="game-difficulty-badge" class="px-3 py-1 rounded-lg text-xs font-extrabold uppercase border bg-emerald-500/20 text-emerald-500 border-emerald-500/30">
+                    Fácil
+                </span>
+
+                <!-- Display do Timer/Cronômetro -->
+                <div id="timer-box" class="flex-1 max-w-[150px] theme-inner-box px-3 py-1.5 rounded-xl border flex items-center justify-between shadow-inner">
+                    <i id="timer-icon" class="fa-regular fa-clock text-xs text-indigo-500"></i>
+                    <span id="timer-display" class="font-mono font-bold text-sm theme-text-main">60.0s</span>
+                </div>
+
+                <!-- Contador de Acertos / Progresso -->
+                <div class="theme-inner-box border px-3 py-1 rounded-xl flex items-center space-x-1.5">
+                    <i id="score-icon" class="fa-solid fa-check text-emerald-500 text-xs"></i>
+                    <span id="score-counter" class="font-mono font-black text-sm theme-text-main">0</span>
+                    <span id="score-max-target" class="text-xs theme-text-sub font-bold hidden">/ 10</span>
+                </div>
+            </div>
+
+            <!-- Barra de Progresso/Tempo -->
+            <div class="w-full theme-inner-box h-2 rounded-full overflow-hidden p-0.5 border">
+                <div id="progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-100" style="width: 100%;"></div>
+            </div>
+
+            <!-- Área da Bandeira -->
+            <div class="relative w-full aspect-[16/10] theme-inner-box rounded-2xl border p-3 flex items-center justify-center overflow-hidden shadow-inner">
+                <img id="flag-image" src="" alt="Bandeira" class="max-h-full max-w-full object-contain drop-shadow-md rounded transition-opacity duration-200">
+                <!-- Overlay de Feedback -->
+                <div id="feedback-overlay" class="absolute inset-0 rounded-2xl flex items-center justify-center text-xl font-black transition-opacity duration-150 opacity-0 pointer-events-none"></div>
+            </div>
+
+            <!-- Opções de Resposta -->
+            <div id="options-container" class="grid grid-cols-1 gap-2.5 pt-1">
+                <!-- Gerado dinamicamente -->
+            </div>
+        </main>
+
+        <!-- TELA DE RESULTADO -->
+        <main id="result-screen" class="w-full glass-card rounded-3xl p-6 shadow-2xl space-y-5 hidden text-center">
+            <div>
+                <div id="result-icon-container" class="inline-flex p-4 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 text-4xl mb-1">
+                    <i id="result-icon" class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 id="result-title" class="text-2xl font-black theme-text-main">Rodada Concluída!</h2>
+                <p id="result-subtitle" class="text-xs theme-text-sub mt-1">Veja seus resultados abaixo</p>
+            </div>
+
+            <!-- Métricas -->
+            <div class="grid grid-cols-3 gap-2 theme-inner-box p-3 rounded-2xl border">
+                <div class="p-2">
+                    <p id="metric-label-1" class="text-[10px] uppercase font-bold theme-text-sub">Tempo</p>
+                    <p id="res-metric-1" class="text-sm font-mono font-black text-amber-500">60s</p>
+                </div>
+                <div class="p-2 border-x border-slate-500/30">
+                    <p id="metric-label-2" class="text-[10px] uppercase font-bold theme-text-sub">Acertos</p>
+                    <p id="res-metric-2" class="text-sm font-mono font-black text-emerald-500">0</p>
+                </div>
+                <div class="p-2">
+                    <p id="metric-label-3" class="text-[10px] uppercase font-bold theme-text-sub">Tentativas</p>
+                    <p id="res-metric-3" class="text-sm font-mono font-black text-indigo-500">0</p>
+                </div>
+            </div>
+
+            <!-- Registro de Placar -->
+            <div id="save-score-section" class="space-y-2 pt-1">
+                <div class="flex gap-2">
+                    <input type="text" id="player-name-input" placeholder="Digite seu nome" maxlength="15" class="flex-1 theme-inner-box border rounded-xl px-3 py-2 text-xs font-semibold theme-text-main focus:outline-none focus:border-indigo-500">
+                    <button onclick="saveCurrentScore()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition hover:scale-105 active:scale-95 shadow-lg shadow-indigo-600/30">
+                        Salvar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Revisão das Bandeiras -->
+            <div class="text-left space-y-2">
+                <p class="text-xs font-bold uppercase tracking-wider theme-text-sub">Histórico de Respostas</p>
+                <div id="answers-review-container" class="max-h-40 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    <!-- Gerado dinamicamente -->
+                </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="flex gap-3 pt-2">
+                <button onclick="showScreen('main-menu')" class="flex-1 py-3 theme-inner-box hover:opacity-80 theme-text-main text-xs font-bold rounded-xl transition hover:scale-105 active:scale-95 border">
+                    Menu Inicial
+                </button>
+                <button onclick="openLeaderboardModal()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition hover:scale-105 active:scale-95 shadow-lg shadow-indigo-600/30">
+                    Ver Ranking
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DE RANKING UNIFICADO -->
+    <div id="leaderboard-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="w-full max-w-md glass-card rounded-3xl p-6 shadow-2xl space-y-4 border max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-500/20 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-trophy text-amber-500 text-lg"></i>
+                    <h3 class="font-black text-lg theme-text-main">Ranking de Recordes</h3>
+                </div>
+                <button onclick="closeLeaderboardModal()" class="theme-text-sub hover:theme-text-main hover:rotate-90 transition-transform duration-200 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Seletor de Modo do Ranking -->
+            <div class="flex bg-slate-200/50 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-500/20">
+                <button id="lb-tab-express" onclick="switchLeaderboardTab('express')" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-indigo-600 text-white">Modo Express</button>
+                <button id="lb-tab-stopwatch" onclick="switchLeaderboardTab('stopwatch')" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition theme-text-sub hover:theme-text-main">Sprint 10</button>
+            </div>
+
+            <!-- Filtros por Dificuldade -->
+            <div class="flex theme-inner-box p-1 rounded-xl border">
+                <button id="filter-all" onclick="filterLeaderboard('all')" class="flex-1 py-1 text-xs font-bold rounded-lg transition bg-indigo-600 text-white">Todos</button>
+                <button id="filter-easy" onclick="filterLeaderboard('easy')" class="flex-1 py-1 text-xs font-bold rounded-lg transition theme-text-sub hover:theme-text-main">Fácil</button>
+                <button id="filter-medium" onclick="filterLeaderboard('medium')" class="flex-1 py-1 text-xs font-bold rounded-lg transition theme-text-sub hover:theme-text-main">Médio</button>
+                <button id="filter-hard" onclick="filterLeaderboard('hard')" class="flex-1 py-1 text-xs font-bold rounded-lg transition theme-text-sub hover:theme-text-main">Difícil</button>
+            </div>
+
+            <!-- Tabela de Classificação -->
+            <div class="flex-1 overflow-y-auto min-h-[200px] border rounded-2xl theme-inner-box custom-scrollbar">
+                <table class="w-full text-left text-xs">
+                    <thead class="theme-inner-box sticky top-0 border-b border-slate-500/20">
+                        <tr id="leaderboard-thead-tr">
+                            <!-- Gerado Dinamicamente -->
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-tbody" class="divide-y divide-slate-500/20 theme-text-main font-medium">
+                        <!-- Gerado Dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Rodapé do Modal -->
+            <div class="flex justify-between items-center pt-2 border-t border-slate-500/20">
+                <button onclick="promptClearLeaderboard()" class="text-[11px] font-bold text-rose-500 hover:text-rose-600 transition">
+                    <i class="fa-solid fa-trash-can mr-1"></i> Limpar Ranking
+                </button>
+                <button onclick="closeLeaderboardModal()" class="px-4 py-2 theme-inner-box hover:opacity-80 theme-text-main font-bold text-xs rounded-xl transition border hover:scale-105 active:scale-95">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMAÇÃO DE LIMPEZA -->
+    <div id="clear-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="w-full max-w-xs glass-card rounded-2xl p-5 text-center space-y-4 border">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500 text-3xl"></i>
+            <h4 class="font-bold theme-text-main text-base">Limpar Recordes?</h4>
+            <p class="text-xs theme-text-sub">Esta ação apagará todo o histórico de pontuações salvas para o modo selecionado.</p>
+            <div class="flex gap-2">
+                <button onclick="closeClearModal()" class="flex-1 py-2 theme-inner-box hover:opacity-80 theme-text-main text-xs font-bold rounded-xl transition border hover:scale-105 active:scale-95">
+                    Cancelar
+                </button>
+                <button onclick="confirmClearLeaderboard()" class="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition hover:scale-105 active:scale-95 shadow-lg shadow-rose-600/30">
+                    Limpar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- BANCO DE DADOS DE PAÍSES --- */
+        const EASY_COUNTRIES = [
+            { code: 'br', name: 'Brasil' }, { code: 'us', name: 'Estados Unidos' }, { code: 'ar', name: 'Argentina' },
+            { code: 'fr', name: 'França' }, { code: 'de', name: 'Alemanha' }, { code: 'it', name: 'Itália' },
+            { code: 'es', name: 'Espanha' }, { code: 'jp', name: 'Japão' }, { code: 'cn', name: 'China' },
+            { code: 'ca', name: 'Canadá' }, { code: 'gb', name: 'Reino Unido' }, { code: 'pt', name: 'Portugal' },
+            { code: 'mx', name: 'México' }, { code: 'ru', name: 'Rússia' }, { code: 'au', name: 'Austrália' },
+            { code: 'eg', name: 'Egito' }, { code: 'kr', name: 'Coreia do Sul' }, { code: 'in', name: 'Índia' },
+            { code: 'cl', name: 'Chile' }, { code: 'co', name: 'Colômbia' }, { code: 'uy', name: 'Uruguai' },
+            { code: 'nl', name: 'Holanda' }
+        ];
+
+        const MEDIUM_COUNTRIES = [
+            { code: 'sk', name: 'Eslováquia' }, { code: 'si', name: 'Eslovênia' }, { code: 'ee', name: 'Estônia' },
+            { code: 'lv', name: 'Letônia' }, { code: 'lt', name: 'Lituânia' }, { code: 'om', name: 'Omã' },
+            { code: 'la', name: 'Laos' }, { code: 'bo', name: 'Bolívia' }, { code: 'py', name: 'Paraguai' },
+            { code: 'is', name: 'Islândia' }, { code: 'fi', name: 'Finlândia' }, { code: 'no', name: 'Noruega' },
+            { code: 'dk', name: 'Dinamarca' }, { code: 'hr', name: 'Croácia' }, { code: 'sn', name: 'Senegal' },
+            { code: 'ke', name: 'Quênia' }, { code: 'ma', name: 'Marrocos' }, { code: 'pe', name: 'Peru' },
+            { code: 'sa', name: 'Arábia Saudita' }, { code: 'vn', name: 'Vietnã' }, { code: 'th', name: 'Tailândia' },
+            { code: 'ec', name: 'Equador' }, { code: 'dz', name: 'Argélia' }, { code: 'hu', name: 'Hungria' },
+            { code: 'rs', name: 'Sérvia' }, { code: 'cz', name: 'República Tcheca' }
+        ];
+
+        const HARD_COUNTRIES = [
+            { code: 'nr', name: 'Nauru' }, { code: 'ki', name: 'Kiribati' }, { code: 'tv', name: 'Tuvalu' },
+            { code: 'vu', name: 'Vanuatu' }, { code: 'pw', name: 'Palau' }, { code: 'fm', name: 'Micronésia' },
+            { code: 'mh', name: 'Ilhas Marshall' }, { code: 'km', name: 'Comores' }, { code: 'st', name: 'São Tomé e Príncipe' },
+            { code: 'sc', name: 'Seichelles' }, { code: 'ls', name: 'Lesoto' }, { code: 'sz', name: 'Eswatini' },
+            { code: 'dj', name: 'Djibouti' }, { code: 'er', name: 'Eritreia' }, { code: 'li', name: 'Liechtenstein' },
+            { code: 'sm', name: 'San Marino' }, { code: 'bt', name: 'Butão' }, { code: 'sr', name: 'Suriname' },
+            { code: 'gy', name: 'Guiana' }, { code: 'cv', name: 'Cabo Verde' }, { code: 'mr', name: 'Mauritânia' },
+            { code: 'cf', name: 'República Centro-Africana' }, { code: 'gw', name: 'Guiné-Bissau' }
+        ];
+
+        const ALL_COUNTRIES = [...EASY_COUNTRIES, ...MEDIUM_COUNTRIES, ...HARD_COUNTRIES];
+
+        const CONFIG_EXPRESS = {
+            easy: { name: 'Fácil (60s)', time: 60, bgClass: 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' },
+            medium: { name: 'Médio (40s)', time: 40, bgClass: 'bg-amber-500/20 text-amber-500 border-amber-500/30' },
+            hard: { name: 'Difícil (20s)', time: 20, bgClass: 'bg-rose-500/20 text-rose-500 border-rose-500/30' }
+        };
+
+        const CONFIG_STOPWATCH = {
+            easy: { name: 'Fácil', target: 10, pool: EASY_COUNTRIES, bgClass: 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' },
+            medium: { name: 'Médio', target: 10, pool: MEDIUM_COUNTRIES, bgClass: 'bg-amber-500/20 text-amber-500 border-amber-500/30' },
+            hard: { name: 'Difícil', target: 10, pool: HARD_COUNTRIES, bgClass: 'bg-rose-500/20 text-rose-500 border-rose-500/30' }
+        };
+
+        /* --- ESTADO GLOBAL DO JOGO --- */
+        let gameState = {
+            gameType: 'express', // 'express' ou 'stopwatch'
+            mode: 'easy',        // 'easy', 'medium', 'hard'
+            correctCount: 0,
+            totalAttempts: 0,
+            timeLimit: 60,
+            startTime: null,
+            elapsedSeconds: 0,
+            timerInterval: null,
+            currentQuestion: null,
+            history: [],
+            solvedCountryCodes: new Set(),
+            isAnswerLocked: false,
+            audioEnabled: true
+        };
+
+        let activeLeaderboardTab = 'express';
+        let activeLeaderboardFilter = 'all';
+
+        /* --- GERENCIAMENTO DE TEMAS --- */
+        function initTheme() {
+            const savedTheme = localStorage.getItem('bandeiras_express_theme') || 'dark';
+            setTheme(savedTheme);
+        }
+
+        function setTheme(theme) {
+            const htmlEl = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            
+            if (theme === 'light') {
+                htmlEl.classList.remove('dark');
+                if (themeIcon) themeIcon.className = 'fa-solid fa-sun text-amber-500 text-sm';
+                localStorage.setItem('bandeiras_express_theme', 'light');
+            } else {
+                htmlEl.classList.add('dark');
+                if (themeIcon) themeIcon.className = 'fa-solid fa-moon text-indigo-400 text-sm';
+                localStorage.setItem('bandeiras_express_theme', 'dark');
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            setTheme(isDark ? 'light' : 'dark');
+        }
+
+        /* --- SINTETIZADOR DE ÁUDIO --- */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!gameState.audioEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const now = audioCtx.currentTime;
+
+                if (type === 'correct') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.15);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'wrong') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(130, now + 0.25);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'win') {
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.frequency.setValueAtTime(freq, now + i * 0.1);
+                        g.gain.setValueAtTime(0.2, now + i * 0.1);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.25);
+                        o.start(now + i * 0.1);
+                        o.stop(now + i * 0.1 + 0.25);
+                    });
+                } else if (type === 'lose') {
+                    [300, 260, 220, 180].forEach((freq, i) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.frequency.setValueAtTime(freq, now + i * 0.12);
+                        g.gain.setValueAtTime(0.2, now + i * 0.12);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.2);
+                        o.start(now + i * 0.12);
+                        o.stop(now + i * 0.12 + 0.2);
+                    });
+                }
+            } catch (e) {
+                console.log('Erro ao reproduzir som:', e);
+            }
+        }
+
+        function toggleAudio() {
+            gameState.audioEnabled = !gameState.audioEnabled;
+            const btn = document.getElementById('audio-btn');
+            if (gameState.audioEnabled) {
+                btn.innerHTML = '<i class="fa-solid fa-volume-high text-sm"></i>';
+                btn.classList.remove('text-rose-500');
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-sm"></i>';
+                btn.classList.add('text-rose-500');
+            }
+        }
+
+        /* --- NAVEGAÇÃO DE TELAS --- */
+        function showScreen(screenId) {
+            const screens = [
+                'main-menu',
+                'express-difficulty-screen',
+                'stopwatch-difficulty-screen',
+                'game-screen',
+                'result-screen'
+            ];
+
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) targetScreen.classList.remove('hidden');
+
+            if (screenId === 'main-menu' || screenId.includes('difficulty')) {
+                clearInterval(gameState.timerInterval);
+            }
+        }
+
+        function selectGameMode(gameType) {
+            if (gameType === 'express') {
+                showScreen('express-difficulty-screen');
+            } else {
+                showScreen('stopwatch-difficulty-screen');
+            }
+        }
+
+        /* --- INICIALIZAÇÃO DE PARTIDA --- */
+        function startGame(gameType, mode) {
+            gameState.gameType = gameType;
+            gameState.mode = mode;
+            gameState.correctCount = 0;
+            gameState.totalAttempts = 0;
+            gameState.history = [];
+            gameState.solvedCountryCodes = new Set();
+            gameState.isAnswerLocked = false;
+            gameState.elapsedSeconds = 0;
+
+            const badge = document.getElementById('game-difficulty-badge');
+            const timerIcon = document.getElementById('timer-icon');
+            const scoreMaxTarget = document.getElementById('score-max-target');
+            const progressBar = document.getElementById('progress-bar');
+
+            if (gameType === 'express') {
+                gameState.timeLimit = CONFIG_EXPRESS[mode].time;
+                badge.textContent = CONFIG_EXPRESS[mode].name.split(' ')[0];
+                badge.className = `px-3 py-1 rounded-lg text-xs font-extrabold uppercase border ${CONFIG_EXPRESS[mode].bgClass}`;
+                
+                timerIcon.className = "fa-regular fa-clock text-xs text-indigo-500";
+                document.getElementById('timer-display').textContent = `${gameState.timeLimit.toFixed(1)}s`;
+                scoreMaxTarget.classList.add('hidden');
+                progressBar.style.width = '100%';
+            } else {
+                badge.textContent = CONFIG_STOPWATCH[mode].name;
+                badge.className = `px-3 py-1 rounded-lg text-xs font-extrabold uppercase border ${CONFIG_STOPWATCH[mode].bgClass}`;
+                
+                timerIcon.className = "fa-solid fa-stopwatch text-xs text-emerald-500";
+                document.getElementById('timer-display').textContent = '00:00.0';
+                scoreMaxTarget.classList.remove('hidden');
+                progressBar.style.width = '0%';
+            }
+
+            document.getElementById('score-counter').textContent = '0';
+            showScreen('game-screen');
+
+            gameState.startTime = Date.now();
+            clearInterval(gameState.timerInterval);
+
+            if (gameType === 'express') {
+                gameState.timerInterval = setInterval(updateExpressTimer, 50);
+            } else {
+                gameState.timerInterval = setInterval(updateStopwatchTimer, 50);
+            }
+
+            nextQuestion();
+        }
+
+        /* --- CRONÔMETROS E TIMER --- */
+        function formatStopwatchTime(totalSeconds) {
+            const mins = Math.floor(totalSeconds / 60);
+            const secs = Math.floor(totalSeconds % 60);
+            const tenths = Math.floor((totalSeconds % 1) * 10);
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${tenths}`;
+        }
+
+        function updateExpressTimer() {
+            const now = Date.now();
+            gameState.elapsedSeconds = (now - gameState.startTime) / 1000;
+            const remaining = Math.max(0, gameState.timeLimit - gameState.elapsedSeconds);
+
+            document.getElementById('timer-display').textContent = `${remaining.toFixed(1)}s`;
+
+            const percentage = (remaining / gameState.timeLimit) * 100;
+            const timerBar = document.getElementById('progress-bar');
+            timerBar.style.width = `${percentage}%`;
+
+            const timerBox = document.getElementById('timer-box');
+            if (remaining <= 5) {
+                timerBox.classList.add('animate-pulse-fast', 'border-rose-500');
+            } else {
+                timerBox.classList.remove('animate-pulse-fast', 'border-rose-500');
+            }
+
+            if (remaining <= 0) {
+                clearInterval(gameState.timerInterval);
+                endGame();
+            }
+        }
+
+        function updateStopwatchTimer() {
+            const now = Date.now();
+            gameState.elapsedSeconds = (now - gameState.startTime) / 1000;
+            document.getElementById('timer-display').textContent = formatStopwatchTime(gameState.elapsedSeconds);
+        }
+
+        /* --- LÓGICA DE PERGUNTAS E RESPOSTAS --- */
+        function nextQuestion() {
+            gameState.isAnswerLocked = false;
+
+            const overlay = document.getElementById('feedback-overlay');
+            overlay.className = "absolute inset-0 rounded-2xl flex items-center justify-center text-xl font-black transition-opacity duration-150 opacity-0 pointer-events-none";
+            overlay.innerHTML = '';
+
+            let currentPool = ALL_COUNTRIES;
+            if (gameState.gameType === 'stopwatch') {
+                currentPool = CONFIG_STOPWATCH[gameState.mode].pool;
+            }
+
+            // Seleciona país correto
+            let available = currentPool.filter(c => !gameState.solvedCountryCodes.has(c.code));
+            if (available.length === 0) {
+                gameState.solvedCountryCodes.clear();
+                available = currentPool;
+            }
+            let correct = available[Math.floor(Math.random() * available.length)];
+
+            // Seleciona 3 opções incorretas
+            let distractors = [];
+            while (distractors.length < 3) {
+                let randomC = currentPool[Math.floor(Math.random() * currentPool.length)];
+                if (randomC.code !== correct.code && !distractors.some(d => d.code === randomC.code)) {
+                    distractors.push(randomC);
+                }
+            }
+
+            let options = [correct, ...distractors];
+            options.sort(() => Math.random() - 0.5);
+
+            gameState.currentQuestion = { correct, options };
+
+            // Renderiza Imagem da Bandeira
+            const img = document.getElementById('flag-image');
+            img.style.opacity = '0';
+            img.src = `https://flagcdn.com/w320/${correct.code}.png`;
+            img.onload = () => { img.style.opacity = '1'; };
+            img.onerror = () => {
+                img.src = `https://placehold.co/320x200/1e293b/64748b?text=${encodeURIComponent(correct.name)}`;
+                img.style.opacity = '1';
+            };
+
+            // Renderiza Opções de Resposta
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            const letters = ['A', 'B', 'C', 'D'];
+
+            options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-3.5 rounded-2xl glass-card border border-slate-300/80 dark:border-slate-700/60 hover:border-indigo-500/80 bg-white/60 dark:bg-slate-900/40 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 text-slate-800 dark:text-slate-200 flex items-center justify-between transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:shadow-indigo-500/10 active:scale-[0.98]";
+                btn.onclick = () => handleAnswer(opt, btn);
+
+                btn.innerHTML = `
+                    <div class="flex items-center space-x-3 text-left">
+                        <span class="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-xs flex items-center justify-center shrink-0">
+                            ${letters[idx]}
+                        </span>
+                        <span class="font-semibold text-xs sm:text-sm theme-text-main">${opt.name}</span>
+                    </div>
+                    <div class="status-icon w-5 h-5 rounded-full flex items-center justify-center opacity-0 transition"></div>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(selectedOption, buttonElement) {
+            if (gameState.isAnswerLocked) return;
+            gameState.isAnswerLocked = true;
+
+            const isCorrect = selectedOption.code === gameState.currentQuestion.correct.code;
+            gameState.totalAttempts++;
+
+            const overlay = document.getElementById('feedback-overlay');
+            const allOptionButtons = document.querySelectorAll('#options-container button');
+
+            if (isCorrect) {
+                gameState.correctCount++;
+                gameState.solvedCountryCodes.add(selectedOption.code);
+                document.getElementById('score-counter').textContent = gameState.correctCount;
+
+                playSound('correct');
+
+                if (gameState.gameType === 'stopwatch') {
+                    const progressPct = (gameState.correctCount / 10) * 100;
+                    document.getElementById('progress-bar').style.width = `${progressPct}%`;
+                }
+
+                buttonElement.className = "w-full p-3.5 rounded-2xl border border-emerald-500 bg-emerald-950/60 text-emerald-200 flex items-center justify-between transition shadow-lg shadow-emerald-900/30";
+                const iconDiv = buttonElement.querySelector('.status-icon');
+                iconDiv.className = "status-icon w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs opacity-100";
+                iconDiv.innerHTML = '<i class="fa-solid fa-check"></i>';
+
+                overlay.innerHTML = '<div class="bg-emerald-600/90 text-white px-4 py-2 rounded-xl shadow-xl border border-emerald-400 flex items-center space-x-2"><i class="fa-solid fa-circle-check"></i><span>Correto!</span></div>';
+                overlay.classList.remove('opacity-0');
+
+                gameState.history.push({
+                    country: gameState.currentQuestion.correct,
+                    chosen: selectedOption,
+                    isCorrect: true
+                });
+            } else {
+                playSound('wrong');
+
+                buttonElement.className = "w-full p-3.5 rounded-2xl border border-rose-500 bg-rose-950/60 text-rose-200 flex items-center justify-between transition shadow-lg shadow-rose-900/30";
+                const iconDiv = buttonElement.querySelector('.status-icon');
+                iconDiv.className = "status-icon w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs opacity-100";
+                iconDiv.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+
+                allOptionButtons.forEach(btn => {
+                    if (btn.innerText.includes(gameState.currentQuestion.correct.name)) {
+                        btn.className = "w-full p-3.5 rounded-2xl border border-emerald-500/80 bg-emerald-950/40 text-emerald-300 flex items-center justify-between transition";
+                    }
+                });
+
+                overlay.innerHTML = '<div class="bg-rose-600/90 text-white px-4 py-2 rounded-xl shadow-xl border border-rose-400 flex items-center space-x-2"><i class="fa-solid fa-circle-xmark"></i><span>Incorreto</span></div>';
+                overlay.classList.remove('opacity-0');
+
+                gameState.history.push({
+                    country: gameState.currentQuestion.correct,
+                    chosen: selectedOption,
+                    isCorrect: false
+                });
+            }
+
+            setTimeout(() => {
+                if (gameState.gameType === 'stopwatch' && gameState.correctCount >= 10) {
+                    endGame();
+                } else if (gameState.gameType === 'express' && gameState.elapsedSeconds >= gameState.timeLimit) {
+                    endGame();
+                } else {
+                    nextQuestion();
+                }
+            }, 450);
+        }
+
+        /* --- FINALIZAR PARTIDA --- */
+        function endGame() {
+            clearInterval(gameState.timerInterval);
+
+            const iconContainer = document.getElementById('result-icon-container');
+            const resultIcon = document.getElementById('result-icon');
+            const resultTitle = document.getElementById('result-title');
+            const resultSubtitle = document.getElementById('result-subtitle');
+
+            const mLabel1 = document.getElementById('metric-label-1');
+            const mLabel2 = document.getElementById('metric-label-2');
+            const mLabel3 = document.getElementById('metric-label-3');
+
+            const res1 = document.getElementById('res-metric-1');
+            const res2 = document.getElementById('res-metric-2');
+            const res3 = document.getElementById('res-metric-3');
+
+            if (gameState.gameType === 'express') {
+                mLabel1.textContent = 'Tempo';
+                mLabel2.textContent = 'Acertos';
+                mLabel3.textContent = 'Tentativas';
+
+                const totalSecs = Math.min(gameState.timeLimit, gameState.elapsedSeconds);
+                res1.textContent = `${totalSecs.toFixed(1)}s`;
+                res2.textContent = gameState.correctCount;
+                res3.textContent = gameState.totalAttempts;
+
+                if (gameState.correctCount >= 10) {
+                    playSound('win');
+                    triggerConfetti();
+                    iconContainer.className = "inline-flex p-4 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-4xl mb-1";
+                    resultIcon.className = "fa-solid fa-crown";
+                    resultTitle.textContent = "Desempenho Incrível!";
+                    resultSubtitle.textContent = "Você é um mestre da geografia!";
+                } else if (gameState.correctCount >= 5) {
+                    playSound('win');
+                    triggerConfetti();
+                    iconContainer.className = "inline-flex p-4 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-4xl mb-1";
+                    resultIcon.className = "fa-solid fa-trophy";
+                    resultTitle.textContent = "Excelente Trabalho!";
+                    resultSubtitle.textContent = "Ótimos conhecimentos geográficos!";
+                } else {
+                    playSound('lose');
+                    iconContainer.className = "inline-flex p-4 rounded-full bg-slate-800 text-slate-400 border border-slate-700 text-4xl mb-1";
+                    resultIcon.className = "fa-solid fa-flag";
+                    resultTitle.textContent = "Tempo Esgotado!";
+                    resultSubtitle.textContent = "Continue praticando para se superar!";
+                }
+            } else {
+                // Modo Sprint (Cronômetro)
+                mLabel1.textContent = 'Tempo Total';
+                mLabel2.textContent = 'Acertos';
+                mLabel3.textContent = 'Tentativas';
+
+                res1.textContent = formatStopwatchTime(gameState.elapsedSeconds);
+                res2.textContent = `10 / 10`;
+                res3.textContent = gameState.totalAttempts;
+
+                playSound('win');
+                triggerConfetti();
+                iconContainer.className = "inline-flex p-4 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-4xl mb-1";
+                resultIcon.className = "fa-solid fa-trophy";
+                resultTitle.textContent = "Desafio Concluído!";
+                resultSubtitle.textContent = `Você completou o circuito em ${formatStopwatchTime(gameState.elapsedSeconds)}`;
+            }
+
+            // Renderiza Revisão de Respostas
+            const reviewContainer = document.getElementById('answers-review-container');
+            reviewContainer.innerHTML = '';
+
+            if (gameState.history.length === 0) {
+                reviewContainer.innerHTML = '<p class="text-xs theme-text-sub text-center py-4">Nenhuma resposta registrada.</p>';
+            } else {
+                gameState.history.forEach((item, idx) => {
+                    const div = document.createElement('div');
+                    div.className = `p-2.5 rounded-xl border flex items-center justify-between text-xs ${item.isCorrect ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`;
+                    
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-2.5 overflow-hidden">
+                            <span class="text-[10px] font-bold theme-text-sub w-3">#${idx + 1}</span>
+                            <img src="https://flagcdn.com/w40/${item.country.code}.png" class="w-6 h-4 object-cover rounded shadow shrink-0" alt="">
+                            <div class="truncate">
+                                <p class="font-bold theme-text-main truncate">${item.country.name}</p>
+                                ${!item.isCorrect ? `<p class="text-[10px] text-rose-500 truncate">Sua resposta: ${item.chosen.name}</p>` : ''}
+                            </div>
+                        </div>
+                        <span class="shrink-0 font-extrabold ${item.isCorrect ? 'text-emerald-500' : 'text-rose-500'} ml-2">
+                            ${item.isCorrect ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-xmark"></i>'}
+                        </span>
+                    `;
+                    reviewContainer.appendChild(div);
+                });
+            }
+
+            showScreen('result-screen');
+        }
+
+        /* --- SALVAR PONTUAÇÕES NO LOCALSTORAGE --- */
+        function getLeaderboardData(type) {
+            const key = type === 'express' ? 'bandeiras_express_scores' : 'bandeiras_express_stopwatch_scores';
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveCurrentScore() {
+            const input = document.getElementById('player-name-input');
+            const name = input.value.trim() || 'Anônimo';
+
+            if (gameState.gameType === 'express') {
+                const newRecord = {
+                    id: Date.now(),
+                    name: name,
+                    mode: gameState.mode,
+                    score: gameState.correctCount,
+                    attempts: gameState.totalAttempts,
+                    time: Math.min(gameState.timeLimit, gameState.elapsedSeconds),
+                    date: new Date().toLocaleDateString('pt-BR')
+                };
+
+                const leaderboard = getLeaderboardData('express');
+                leaderboard.push(newRecord);
+                leaderboard.sort((a, b) => b.score - a.score || a.time - b.time);
+
+                try {
+                    localStorage.setItem('bandeiras_express_scores', JSON.stringify(leaderboard));
+                } catch (e) { console.error(e); }
+
+            } else {
+                const newRecord = {
+                    id: Date.now(),
+                    name: name,
+                    mode: gameState.mode,
+                    timeSeconds: gameState.elapsedSeconds,
+                    timeFormatted: formatStopwatchTime(gameState.elapsedSeconds),
+                    attempts: gameState.totalAttempts,
+                    errors: gameState.totalAttempts - gameState.correctCount,
+                    date: new Date().toLocaleDateString('pt-BR')
+                };
+
+                const leaderboard = getLeaderboardData('stopwatch');
+                leaderboard.push(newRecord);
+                leaderboard.sort((a, b) => a.timeSeconds - b.timeSeconds || a.errors - b.errors);
+
+                try {
+                    localStorage.setItem('bandeiras_express_stopwatch_scores', JSON.stringify(leaderboard));
+                } catch (e) { console.error(e); }
+            }
+
+            input.value = '';
+            activeLeaderboardTab = gameState.gameType;
+            openLeaderboardModal();
+        }
+
+        /* --- LÓGICA DO MODAL DE RANKING --- */
+        function openLeaderboardModal() {
+            document.getElementById('leaderboard-modal').classList.remove('hidden');
+            switchLeaderboardTab(activeLeaderboardTab);
+        }
+
+        function closeLeaderboardModal() {
+            document.getElementById('leaderboard-modal').classList.add('hidden');
+        }
+
+        function switchLeaderboardTab(tab) {
+            activeLeaderboardTab = tab;
+            const tabExpress = document.getElementById('lb-tab-express');
+            const tabStopwatch = document.getElementById('lb-tab-stopwatch');
+
+            if (tab === 'express') {
+                tabExpress.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-indigo-600 text-white shadow";
+                tabStopwatch.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition theme-text-sub hover:theme-text-main";
+            } else {
+                tabStopwatch.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition bg-indigo-600 text-white shadow";
+                tabExpress.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition theme-text-sub hover:theme-text-main";
+            }
+
+            renderLeaderboard();
+        }
+
+        function filterLeaderboard(filter) {
+            activeLeaderboardFilter = filter;
+            ['all', 'easy', 'medium', 'hard'].forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (f === filter) {
+                    btn.className = "flex-1 py-1 text-xs font-bold rounded-lg transition bg-indigo-600 text-white shadow";
+                } else {
+                    btn.className = "flex-1 py-1 text-xs font-bold rounded-lg transition theme-text-sub hover:theme-text-main";
+                }
+            });
+            renderLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            const theadTr = document.getElementById('leaderboard-thead-tr');
+            const tbody = document.getElementById('leaderboard-tbody');
+            tbody.innerHTML = '';
+
+            let list = getLeaderboardData(activeLeaderboardTab);
+
+            if (activeLeaderboardFilter !== 'all') {
+                list = list.filter(item => item.mode === activeLeaderboardFilter);
+            }
+
+            if (activeLeaderboardTab === 'express') {
+                theadTr.innerHTML = `
+                    <th class="py-2.5 px-3 font-bold theme-text-sub">#</th>
+                    <th class="py-2.5 px-3 font-bold theme-text-sub">Jogador</th>
+                    <th class="py-2.5 px-3 font-bold theme-text-sub">Modo</th>
+                    <th class="py-2.5 px-3 font-bold theme-text-sub">Acertos</th>
+                    <th class="py-2.5 px-3 font-bold theme-text-sub text-right">Tempo</th>
+                `;
+            } else {
+                theadTr.innerHTML = `
+                    <th class="py-2.5 px-3 font-bold theme-text-sub">#</th>
+                    <th class="py-2.5 px-3 font-bold theme-text-sub">Jogador</th>
+                    <th class="py-2.5 px-3 font-bold theme-text-sub">Modo</th>
+                    <th class="py-2.5 px-3 font-bold theme-text-sub text-right">Tempo</th>
+                    <th class="py-2.5 px-3 font-bold theme-text-sub text-right">Erros</th>
+                `;
+            }
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-xs theme-text-sub">Nenhum recorde registrado ainda.</td></tr>`;
+                return;
+            }
+
+            const modeLabels = { easy: 'Fácil', medium: 'Médio', hard: 'Difícil' };
+
+            list.forEach((item, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-indigo-500/10 transition border-b border-slate-500/20";
+
+                let medal = `<span class="font-bold theme-text-sub">${idx + 1}º</span>`;
+                if (idx === 0) medal = '🥇';
+                else if (idx === 1) medal = '🥈';
+                else if (idx === 2) medal = '🥉';
+
+                if (activeLeaderboardTab === 'express') {
+                    tr.innerHTML = `
+                        <td class="py-2.5 px-3 font-bold">${medal}</td>
+                        <td class="py-2.5 px-3 font-bold theme-text-main max-w-[100px] truncate">${item.name}</td>
+                        <td class="py-2.5 px-3 text-[11px] theme-text-sub">${modeLabels[item.mode] || item.mode}</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-emerald-500">${item.score}</td>
+                        <td class="py-2.5 px-3 font-mono theme-text-sub text-right">${Number(item.time).toFixed(1)}s</td>
+                    `;
+                } else {
+                    tr.innerHTML = `
+                        <td class="py-2.5 px-3 font-bold">${medal}</td>
+                        <td class="py-2.5 px-3 font-bold theme-text-main max-w-[100px] truncate">${item.name}</td>
+                        <td class="py-2.5 px-3 text-[11px] theme-text-sub">${modeLabels[item.mode] || item.mode}</td>
+                        <td class="py-2.5 px-3 font-mono font-black text-amber-500 text-right">${item.timeFormatted}</td>
+                        <td class="py-2.5 px-3 font-mono font-bold text-rose-500 text-right">${item.errors || 0}</td>
+                    `;
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        /* --- LIMPEZA DE RANKING --- */
+        function promptClearLeaderboard() {
+            document.getElementById('clear-modal').classList.remove('hidden');
+        }
+
+        function closeClearModal() {
+            document.getElementById('clear-modal').classList.add('hidden');
+        }
+
+        function confirmClearLeaderboard() {
+            const key = activeLeaderboardTab === 'express' ? 'bandeiras_express_scores' : 'bandeiras_express_stopwatch_scores';
+            try {
+                localStorage.removeItem(key);
+            } catch (e) {
+                console.error(e);
+            }
+            closeClearModal();
+            renderLeaderboard();
+        }
+
+        /* --- ANIMAÇÃO DE CONFETE --- */
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const pieces = [];
+            const colors = ['#f59e0b', '#10b981', '#6366f1', '#ec4899', '#3b82f6'];
+
+            for (let i = 0; i < 90; i++) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 3 + 2,
+                    speedX: Math.random() * 2 - 1,
+                    rotation: Math.random() * 360
+                });
+            }
+
+            let start = Date.now();
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                pieces.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    p.rotation += 2;
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                });
+
+                if (Date.now() - start < 3500) {
+                    requestAnimationFrame(animate);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            animate();
+        }
+
+        /* --- EVENT LISTENERS --- */
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+        });
+
+        window.addEventListener('resize', () => {
+            const canvas = document.getElementById('confetti-canvas');
+            if (canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        });
+    </script>
+</body>
+</html>
